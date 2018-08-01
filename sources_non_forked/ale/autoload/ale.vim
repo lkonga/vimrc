@@ -192,25 +192,7 @@ endfunction
 " Every variable name will be prefixed with 'ale_'.
 function! ale#Var(buffer, variable_name) abort
     let l:full_name = 'ale_' . a:variable_name
-<<<<<<< HEAD
-    let l:vars = getbufvar(str2nr(a:buffer), '', 0)
-
-    if l:vars is 0
-        " Look for variables from deleted buffers, saved from :ALEFix
-        let l:vars = get(get(g:ale_fix_buffer_data, a:buffer, {}), 'vars', {})
-    endif
-||||||| merged common ancestors
-
-    if bufexists(l:nr)
-        let l:vars = getbufvar(l:nr, '')
-    elseif has_key(g:, 'ale_fix_buffer_data')
-        let l:vars = get(g:ale_fix_buffer_data, l:nr, {'vars': {}}).vars
-    else
-        let l:vars = {}
-    endif
-=======
     let l:vars = getbufvar(str2nr(a:buffer), '', {})
->>>>>>> master
 
     return get(l:vars, l:full_name, g:[l:full_name])
 endfunction
@@ -221,13 +203,6 @@ endfunction
 function! ale#Set(variable_name, default) abort
     let l:full_name = 'ale_' . a:variable_name
 
-<<<<<<< HEAD
-    if !has_key(g:, l:full_name)
-        let g:[l:full_name] = a:default
-    endif
-||||||| merged common ancestors
-    return l:value
-=======
     if !has_key(g:, l:full_name)
         let g:[l:full_name] = a:default
     endif
@@ -250,7 +225,6 @@ function! ale#Env(variable_name, value) abort
     endif
 
     return a:variable_name . '=' . ale#Escape(a:value) . ' '
->>>>>>> master
 endfunction
 
 " Escape a string suitably for each platform.

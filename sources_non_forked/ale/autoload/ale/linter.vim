@@ -68,16 +68,8 @@ function! s:LanguageGetter(buffer) dict abort
     return l:self.language
 endfunction
 
-<<<<<<< HEAD
-function! ale#linter#PreProcess(filetype, linter) abort
-    if type(a:linter) != type({})
-||||||| merged common ancestors
-function! ale#linter#PreProcess(linter) abort
-    if type(a:linter) != type({})
-=======
 function! ale#linter#PreProcess(filetype, linter) abort
     if type(a:linter) isnot v:t_dict
->>>>>>> master
         throw 'The linter object must be a Dictionary'
     endif
 

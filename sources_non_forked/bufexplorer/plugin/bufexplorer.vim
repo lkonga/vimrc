@@ -1160,4 +1160,3 @@ let s:MRU_Exclude_List = ["[BufExplorer]","__MRU_Files__"]
 "1}}}
 
 " vim:ft=vim foldmethod=marker sw=2
-
