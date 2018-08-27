@@ -8,21 +8,13 @@ if exists('g:loaded_fugitive')
 endif
 let g:loaded_fugitive = 1
 
-function! s:shellslash(path) abort
-  if &shell =~? 'cmd' || exists('+shellslash') && !&shellslash
-    return tr(a:path, '\', '/')
-  else
-    return a:path
-  endif
-endfunction
-
 function! FugitiveGitDir(...) abort
   if !a:0 || a:1 ==# -1
     return get(b:, 'git_dir', '')
   elseif type(a:1) == type(0)
     return getbufvar(a:1, 'git_dir')
   elseif type(a:1) == type('')
-    return substitute(s:shellslash(a:1), '/$', '', '')
+    return substitute(s:Slash(a:1), '/$', '', '')
   else
     return ''
   endif
@@ -42,13 +34,17 @@ endfunction
 
 function! FugitiveReal(...) abort
   let file = a:0 ? a:1 : @%
-  if file =~? '^fugitive:' || a:0 > 1
+  if file =~# '^\a\a\+:' || a:0 > 1
     return call('fugitive#Real', [file] + a:000[1:-1])
-  elseif file =~# '^/\|^\a\+:\|^$'
+  elseif file =~# '^/\|^\a:\|^$'
     return file
   else
     return fnamemodify(file, ':p' . (file =~# '[\/]$' ? '' : ':s?[\/]$??'))
   endif
+endfunction
+
+function! FugitiveRoute(...) abort
+  return fugitive#Route(a:0 ? a:1 : ':/', FugitiveGitDir(a:0 > 1 ? a:2 : -1))
 endfunction
 
 function! FugitivePath(...) abort
@@ -59,19 +55,8 @@ function! FugitivePath(...) abort
   endif
 endfunction
 
-function! FugitiveGenerate(...) abort
-  if a:0 && s:shellslash(a:1) =~# '^\%(\a\a\+:\)\=\%(a:\)\=/\|^[~$]'
-    return a:1
-  endif
-  return fugitive#repo(FugitiveGitDir(a:0 > 1 ? a:2 : -1)).translate(a:0 ? a:1 : '', 1)
-endfunction
-
-function! FugitiveRoute(...) abort
-  return call('FugitiveGenerate', a:000)
-endfunction
-
 function! FugitiveParse(...) abort
-  let path = s:shellslash(a:0 ? a:1 : @%)
+  let path = s:Slash(a:0 ? a:1 : @%)
   let vals = matchlist(path, '\c^fugitive:\%(//\)\=\(.\{-\}\)\%(//\|::\)\(\x\{40\}\|[0-3]\)\(/.*\)\=$')
   if len(vals)
     return [(vals[2] =~# '^.$' ? ':' : '') . vals[2] . substitute(vals[3], '^/', ':', ''), vals[1]]
@@ -93,7 +78,7 @@ function! FugitiveHead(...) abort
   if empty(dir)
     return ''
   endif
-  return fugitive#repo(dir).head(a:0 ? a:1 : 0)
+  return fugitive#Head(a:0 ? a:1 : 0, dir)
 endfunction
 
 function! FugitiveStatusline(...) abort
@@ -145,7 +130,7 @@ function! FugitiveTreeForGitDir(path) abort
 endfunction
 
 function! FugitiveExtractGitDir(path) abort
-  let path = s:shellslash(a:path)
+  let path = s:Slash(a:path)
   if path =~# '^fugitive:'
     return matchstr(path, '\C^fugitive:\%(//\)\=\zs.\{-\}\ze\%(//\|::\|$\)')
   elseif isdirectory(path)
@@ -155,7 +140,7 @@ function! FugitiveExtractGitDir(path) abort
   endif
   let pre = substitute(matchstr(path, '^\a\a\+\ze:'), '^.', '\u&', '')
   if len(pre) && exists('*' . pre . 'Real')
-    let path = s:shellslash({pre}Real(path))
+    let path = s:Slash({pre}Real(path))
   endif
   let root = resolve(path)
   if root !=# path
@@ -215,6 +200,18 @@ function! FugitiveDetect(path) abort
   endif
 endfunction
 
+function! FugitiveGenerate(...) abort
+  return call('FugitiveRoute', a:000)
+endfunction
+
+function! s:Slash(path) abort
+  if exists('+shellslash')
+    return tr(a:path, '\', '/')
+  else
+    return a:path
+  endif
+endfunction
+
 augroup fugitive
   autocmd!
 
@@ -239,14 +236,14 @@ augroup fugitive
   autocmd FileType gitrebase
         \ let &l:include = '^\%(pick\|squash\|edit\|reword\|fixup\|drop\|[pserfd]\)\>' |
         \ if exists('b:git_dir') |
-        \   let &l:includeexpr = 'v:fname =~# ''^\x\{4,40\}$'' ? FugitiveGenerate(v:fname) : ' .
+        \   let &l:includeexpr = 'v:fname =~# ''^\x\{4,40\}$'' ? FugitiveRoute(v:fname) : ' .
         \   (len(&l:includeexpr) ? &l:includeexpr : 'v:fname') |
         \ endif |
         \ let b:undo_ftplugin = get(b:, 'undo_ftplugin', 'exe') . '|setl inex= inc='
 
   autocmd BufReadCmd index{,.lock}
         \ if FugitiveIsGitDir(expand('<amatch>:p:h')) |
-        \   let b:git_dir = s:shellslash(expand('<amatch>:p:h')) |
+        \   let b:git_dir = s:Slash(expand('<amatch>:p:h')) |
         \   exe fugitive#BufReadStatus() |
         \ elseif filereadable(expand('<amatch>')) |
         \   read <amatch> |
