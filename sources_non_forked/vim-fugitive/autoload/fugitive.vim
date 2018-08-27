@@ -305,55 +305,7 @@ function! fugitive#RemoteUrl(...) abort
   return v:shell_error ? '' : out
 endfunction
 
-<<<<<<< HEAD
-function! s:recall() abort
-  let rev = s:sub(fugitive#buffer().rev(), '^/', '')
-  if rev ==# ':'
-    return matchstr(getline('.'),'^.\=\t\%([[:alpha:] ]\+: *\)\=\zs.\{-\}\ze\%( ([^()[:digit:]]\+)\)\=$\|^\d\{6} \x\{40\} \d\t\zs.*')
-  elseif fugitive#buffer().type('tree')
-    let file = matchstr(getline('.'), '\t\zs.*')
-    if empty(file) && line('.') > 2
-      let file = s:sub(getline('.'), '/$', '')
-    endif
-    if !empty(file) && rev !~# ':$'
-      return rev . '/' . file
-    else
-      return rev . file
-    endif
-  endif
-  return rev
-endfunction
-
-function! s:map(mode, lhs, rhs, ...) abort
-  let flags = (a:0 ? a:1 : '') . (a:rhs =~# '<Plug>' ? '' : '<script>')
-  let head = a:lhs
-  let tail = ''
-  let keys = get(g:, a:mode.'remap', {})
-  if type(keys) == type([])
-    return
-  endif
-  while !empty(head)
-    if has_key(keys, head)
-      let head = keys[head]
-      if empty(head)
-        return
-      endif
-      break
-    endif
-    let tail = matchstr(head, '<[^<>]*>$\|.$') . tail
-    let head = substitute(head, '<[^<>]*>$\|.$', '', '')
-  endwhile
-  if flags !~# '<unique>' || empty(mapcheck(head.tail, a:mode))
-    exe a:mode.'map <buffer>' flags head.tail a:rhs
-    if a:0 > 1
-      let b:undo_ftplugin = get(b:, 'undo_ftplugin', 'exe') .
-            \ '|sil! exe "' . a:mode . 'unmap <buffer> ' . head.tail . '"'
-    endif
-  endif
-endfunction
-=======
 " Section: Repository Object
->>>>>>> master
 
 function! s:add_methods(namespace, method_names) abort
   for name in a:method_names
@@ -410,63 +362,8 @@ function! s:repo_bare() dict abort
   endif
 endfunction
 
-<<<<<<< HEAD
-function! s:repo_translate(spec, ...) dict abort
-  let rev = a:spec
-  let dir = self.git_dir
-  let tree = s:Tree(dir)
-  if rev ==# '.'
-    let f = empty(tree) ? dir : tree
-  elseif rev =~# '^/\=\.git$' && empty(tree)
-    let f = dir
-  elseif rev =~# '^/\=\.git/'
-    let f = s:sub(rev, '^/=\.git', '')
-    let cdir = fugitive#CommonDir(dir)
-    if cdir !=# dir && (f =~# '^/\%(config\|info\|hooks\|objects\|refs\|worktrees\)' || !filereadable(f) && filereadable(cdir . f))
-      let f = cdir . f
-    else
-      let f = dir . f
-    endif
-  elseif empty(rev) || rev ==# '/.'
-    return self.tree()
-  elseif rev =~# '^\.\=/'
-    let f = self.tree(substitute(rev, '^\.\=/', '', ''))
-  elseif rev =~# '^:[0-3]:/\@!'
-    let f = 'fugitive://' . dir . '//' . rev[1] . '/' . rev[3:-1]
-  elseif rev ==# ':'
-    if $GIT_INDEX_FILE =~# '/[^/]*index[^/]*\.lock$' && s:cpath(fnamemodify($GIT_INDEX_FILE,':p')[0:strlen(dir)]) ==# s:cpath(dir . '/') && filereadable($GIT_INDEX_FILE)
-      let f = fnamemodify($GIT_INDEX_FILE, ':p')
-    else
-      let f = dir . '/index'
-    endif
-  elseif rev =~# '^:/\@!'
-    let f = 'fugitive://' . dir . '//0/' . rev[1:-1]
-  else
-    if rev =~# 'HEAD\|^refs/' && rev !~# ':'
-      let cdir = rev =~# '^refs/' ? fugitive#CommonDir(dir) : dir
-      if filereadable(cdir . '/' . rev)
-        let f = simplify(cdir . '/' . rev)
-      endif
-    endif
-    if !exists('f')
-      let commit = substitute(matchstr(rev,'^[^:]\+\|^:.*'), '^@\%($|[^~]\)\@=', 'HEAD', '')
-      let file = substitute(matchstr(rev, '^[^:]\+\zs:.*'), '^:', '/', '')
-      if commit !~# '^[0-9a-f]\{40\}$'
-        let commit = system(s:Prepare(dir, 'rev-parse', '--verify', commit))[0:-2]
-        let commit = v:shell_error ? '' : commit
-      endif
-      if len(commit)
-        let f = 'fugitive://' . dir . '//' . commit . file
-      else
-        let f = self.tree(rev)
-      endif
-    endif
-  endif
-  return a:0 && a:1 ? s:PlatformSlash(f) : f
-=======
 function! s:repo_route(object) dict abort
   return fugitive#Route(a:object, self.git_dir)
->>>>>>> master
 endfunction
 
 function! s:repo_translate(rev) dict abort
@@ -1186,32 +1083,10 @@ function! s:GlobComplete(lead, pattern) abort
   return results
 endfunction
 
-<<<<<<< HEAD
-call s:add_methods('buffer',['getvar','getline','repo','type','spec','name','commit','path','relative','rev','expand'])
-
-" Section: Completion
-
-function! s:GlobComplete(lead, pattern) abort
-  if v:version >= 704
-    let results = glob(a:lead . a:pattern, 0, 1)
-  else
-    let results = split(glob(a:lead . a:pattern), "\n")
-  endif
-  call map(results, 'v:val !~# "/$" && isdirectory(v:val) ? v:val."/" : v:val')
-  call map(results, 'v:val[ strlen(a:lead) : -1 ]')
-  return results
-endfunction
-
-function! fugitive#PathComplete(base, ...) abort
-  let dir = a:0 == 1 ? a:1 : get(b:, 'git_dir', '')
-  let tree = FugitiveTreeForGitDir(dir) . '/'
-  let strip = '^:\=/\%(\./\)\='
-=======
 function! fugitive#PathComplete(base, ...) abort
   let dir = a:0 == 1 ? a:1 : get(b:, 'git_dir', '')
   let tree = s:Tree(dir) . '/'
   let strip = '^\%(:/:\=\|:(top)\|:(top,literal)\|:(literal,top)\|:(literal)\)'
->>>>>>> master
   let base = substitute(a:base, strip, '', '')
   if base =~# '^\.git/'
     let pattern = s:gsub(base[5:-1], '/', '*&').'*'
@@ -1222,12 +1097,6 @@ function! fugitive#PathComplete(base, ...) abort
     endif
     call s:Uniq(matches)
     call map(matches, "'.git/' . v:val")
-<<<<<<< HEAD
-  else
-    let matches = s:GlobComplete(tree, s:gsub(base, '/', '*&').'*')
-  endif
-  call map(matches, 's:fnameescape(s:shellslash(matchstr(a:base, strip) . v:val))')
-=======
   elseif base =~# '^\~/'
     let matches = map(s:GlobComplete(expand('~/'), base[2:-1] . '*'), '"~/" . v:val')
   elseif a:base =~# '^/\|^\a\+:\|^\.\.\=/\|^:(literal)'
@@ -1238,20 +1107,11 @@ function! fugitive#PathComplete(base, ...) abort
     let matches = []
   endif
   call map(matches, 's:fnameescape(s:Slash(matchstr(a:base, strip) . v:val))')
->>>>>>> master
   return matches
 endfunction
 
 function! fugitive#Complete(base, ...) abort
   let dir = a:0 == 1 ? a:1 : get(b:, 'git_dir', '')
-<<<<<<< HEAD
-  let tree = s:Tree(dir) . '/'
-  if a:base =~# '^\.\=/' || a:base !~# ':'
-    let results = []
-    if a:base =~# '^refs/'
-      let results += map(s:GlobComplete(fugitive#CommonDir(dir) . '/', a:base . '*'), 's:shellslash(v:val)')
-    elseif a:base !~# '^\.\=/'
-=======
   let cwd = a:0 == 1 ? s:Tree(dir) : getcwd()
   let tree = s:Tree(dir) . '/'
   let subdir = ''
@@ -1264,7 +1124,6 @@ function! fugitive#Complete(base, ...) abort
     if a:base =~# '^refs/'
       let results += map(s:GlobComplete(fugitive#CommonDir(dir) . '/', a:base . '*'), 's:Slash(v:val)')
     elseif a:base !~# '^\.\=/\|^:('
->>>>>>> master
       let heads = ['HEAD', 'ORIG_HEAD', 'FETCH_HEAD', 'MERGE_HEAD', 'refs/']
       let heads += sort(split(s:TreeChomp(["rev-parse","--symbolic","--branches","--tags","--remotes"], dir),"\n"))
       if filereadable(fugitive#CommonDir(dir) . '/refs/stash')
@@ -1276,11 +1135,7 @@ function! fugitive#Complete(base, ...) abort
     endif
     call map(results, 's:fnameescape(v:val)')
     if !empty(tree)
-<<<<<<< HEAD
-      let results += fugitive#PathComplete(a:base, dir)
-=======
       let results += a:0 == 1 ? fugitive#PathComplete(a:base, dir) : fugitive#PathComplete(a:base)
->>>>>>> master
     endif
     return results
 
@@ -1717,10 +1572,6 @@ function! s:DirComplete(A, L, P) abort
   return filter(fugitive#PathComplete(a:A), 'v:val =~# "/$"')
 endfunction
 
-<<<<<<< HEAD
-call s:command("-bar -bang -nargs=? -complete=customlist,s:DirComplete Gcd  :exe 'cd<bang>'  s:fnameescape((empty(s:Tree()) ? b:git_dir : s:Tree()) . '/' . <q-args>)")
-call s:command("-bar -bang -nargs=? -complete=customlist,s:DirComplete Glcd :exe 'lcd<bang>' s:fnameescape((empty(s:Tree()) ? b:git_dir : s:Tree()) . '/' . <q-args>)")
-=======
 function! s:DirArg(path) abort
   let path = substitute(a:path, '^:/:\=\|^:(\%(top\|top,literal\|literal,top\|literal\))', '', '')
   if path =~# '^/\|^\a\+:\|^\.\.\=\%(/\|$\)'
@@ -1732,7 +1583,6 @@ endfunction
 
 call s:command("-bar -bang -nargs=? -complete=customlist,s:DirComplete Gcd  :exe 'cd<bang>'  s:fnameescape(s:DirArg(<q-args>))")
 call s:command("-bar -bang -nargs=? -complete=customlist,s:DirComplete Glcd :exe 'lcd<bang>' s:fnameescape(s:DirArg(<q-args>))")
->>>>>>> master
 
 " Section: :Gstatus
 
@@ -3318,23 +3168,14 @@ function! s:Browse(bang,line1,count,...) abort
       let rev = s:DirRev(@%)[1]
     endif
     if rev =~# '^:\=$'
-<<<<<<< HEAD
-      let expanded = s:Relative('/')
-=======
       let expanded = s:Relative()
->>>>>>> master
     else
       let expanded = s:Expand(rev)
     endif
     let cdir = fugitive#CommonDir(b:git_dir)
     for dir in ['tags/', 'heads/', 'remotes/']
-<<<<<<< HEAD
-      if filereadable(cdir . '/refs/' . dir . expanded)
-        let expanded = '/.git/refs/' . dir . expanded
-=======
       if expanded !~# '^[./]' && filereadable(cdir . '/refs/' . dir . expanded)
         let expanded = '.git/refs/' . dir . expanded
->>>>>>> master
       endif
     endfor
     let full = s:Generate(expanded)
@@ -3443,14 +3284,6 @@ function! s:Browse(bang,line1,count,...) abort
       endif
       if empty(commit)
         let commit = readfile(b:git_dir . '/HEAD', '', 1)[0]
-<<<<<<< HEAD
-        let i = 0
-        while commit =~# '^ref: ' && i < 10
-          let commit = readfile(cdir . '/' . commit[5:-1], '', 1)[0]
-          let i -= 1
-        endwhile
-=======
->>>>>>> master
       endif
       let i = 0
       while commit =~# '^ref: ' && i < 10
